@@ -1,0 +1,108 @@
+package Game;
+
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.util.Random;
+import java.util.Scanner;
+
+public class Client {
+    static final int MIN_RAND = 1000000;
+    static final int MAX_RAND = 1000000000;
+
+    public static void main(String[] args) throws Exception {
+
+        try (Socket socket = new Socket("localhost", 59898)) {
+
+            System.out.println("Player2 starts the game!");
+
+            Scanner in = new Scanner(socket.getInputStream());
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+            Scanner sc = new Scanner(System.in);
+            String choice = null;
+            String numToAddfromServer = null;
+            boolean isValidChoice = false;
+            boolean printFlag = false;
+            int numToAdd = 0;
+            int numberGenerated = 0;
+                 
+            do {
+                System.out.println("Do you want to play the game manually or automatically?  [M/A]");
+                choice = sc.nextLine();               
+                isValidChoice = choice.equalsIgnoreCase("M") || choice.equalsIgnoreCase("A");
+                if (!isValidChoice) {
+                    System.out.println("Enter a valid input [M/A]");
+                }
+            }while (!isValidChoice);
+
+            if(isValidChoice) {
+                if (choice.equalsIgnoreCase("M")) {
+                    System.out.println("Enter your number : ");
+                    out.println(sc.nextLine());
+                    out.flush();
+                } 
+                else{ 
+                	 int randomNumber = generateRandomNumber(MIN_RAND, MAX_RAND);                 	 
+                	 out.println(randomNumber);                	 
+                }
+            }
+
+            while (true) {
+            	
+                try {
+                    String inputLine = in.nextLine();
+                    if(in.hasNextLine()) {
+                        numToAddfromServer = in.nextLine();
+                    }
+                    
+                    if(!printFlag) {
+                    	  
+                        if(choice.equalsIgnoreCase("A")) {
+                        	System.out.println("yoo" +numberGenerated);
+                        	printFlag = true;
+                        }
+                    }
+                  
+
+                    if (inputLine.contains("WINS")) {
+                        System.out.println("Player1 adds "+ numToAddfromServer + ", reaches 1 and wins" );
+                        break;
+                    }
+                    
+                    System.out.println("Player1 adds " + numToAddfromServer +" and sends " + inputLine + " to Player2");
+                    int clientNumber = Integer.valueOf(inputLine);
+                    int mod = clientNumber % 3;
+
+                    if(mod == 0) {
+                        numToAdd = 0;
+                    }
+                    if(mod == 1) {
+                        numToAdd = -1;
+                    }
+                    if(mod == 2) {
+                        numToAdd = 1;
+                    }
+
+                    int dividedByThree = (clientNumber + numToAdd) / 3;
+                    if (dividedByThree == 1) {
+                        System.out.println("Player2 adds " + numToAdd + ", reaches 1 and wins" + "!!!!");
+                        out.println("CLIENT PLAYER WINS");
+                        break;
+                    } else {
+                        System.out.println("Player2 adds " +numToAdd + " and sends " + dividedByThree + " to Player1");
+                        out.println(dividedByThree);
+                        out.flush();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private static int generateRandomNumber(int min, int max) {
+        Random rand = new Random();
+        int nextInt = rand.nextInt((max - min) + 1) + min;
+        return nextInt;
+
+    }
+}
